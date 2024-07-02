@@ -1973,9 +1973,9 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
           if (source.turnData.hitsLeft === source.turnData.hitCount) {
             this.lapseTags(BattlerTagLapseType.HIT);
           }
-          const subTag = this.getTag(SubstituteTag) as SubstituteTag;
+          const subTag = this.getTag(SubstituteTag);
 
-          if (subTag && !move.bypassesSubstitute(source)) { // TODO: Make this also check if the source has Infiltrator
+          if (!!subTag && subTag instanceof SubstituteTag && !move.canIgnoreSubstitute(source)) {
             subTag.substituteHp -= damage.value;
             damage.value = 0;
           }
@@ -2009,7 +2009,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
             this.scene.applyModifiers(DamageMoneyRewardModifier, true, source, damage);
           }
 
-          if (subTag?.substituteHp <= 0) {
+          if (subTag instanceof SubstituteTag && subTag?.substituteHp <= 0) {
             this.lapseTag(BattlerTagType.SUBSTITUTE);
           }
         }
@@ -2051,7 +2051,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       if (!typeless) {
         applyPreDefendAbAttrs(TypeImmunityAbAttr, this, source, move, cancelled, typeMultiplier);
       }
-      if (!!this.getTag(SubstituteTag) && !move.bypassesSubstitute(source)) {
+      if (!!this.getTag(SubstituteTag) && !move.canIgnoreSubstitute(source)) {
         cancelled.value = true;
       }
       if (!cancelled.value) {
