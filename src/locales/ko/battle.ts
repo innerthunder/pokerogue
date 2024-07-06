@@ -133,7 +133,7 @@ export const battle: SimpleTranslationEntries = {
   "battlerTagsSaltCuredLapse": "{{pokemonNameWithAffix}}[[는]] 소금절이의\n데미지를 입고 있다.",
   "battlerTagsCursedOnAdd": "{{pokemonNameWithAffix}}[[는]]\n자신의 체력을 깎아서\n{{pokemonName}}에게 저주를 걸었다!",
   "battlerTagsCursedLapse": "{{pokemonNameWithAffix}}[[는]]\n저주받고 있다!",
-  "battlerTagsSubstituteOnAdd": "{{pokemonNameWithAffix}} put in a substitute!",
-  "battlerTagsSubstituteOnHit": "The substitute took damage for {{pokemonNameWithAffix}}!",
-  "battlerTagsSubstituteOnRemove": "{{pokemonNameWithAffix}}'s substitute faded!"
+  "battlerTagsSubstituteOnAdd": "{{pokemonNameWithAffix}}의\n대타가 나타났다!",
+  "battlerTagsSubstituteOnHit": "{{pokemonNameWithAffix}}[[를]] 대신하여\n대타가 공격을 받았다!",
+  "battlerTagsSubstituteOnRemove": "{{pokemonNameWithAffix}}의\n대타는 사라져 버렸다..."
 } as const;
