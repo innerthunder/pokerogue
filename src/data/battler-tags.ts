@@ -1545,7 +1545,7 @@ export class SubstituteTag extends BattlerTag {
 
   onAdd(pokemon: Pokemon): void {
     // Should queue message and change Pokemon's form to Substitute doll
-    pokemon.scene.queueMessage(getPokemonMessage(pokemon, " put in a substitute!"));
+    pokemon.scene.queueMessage(i18next.t("battle:battlerTagsSubstituteOnAdd", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) }));
 
     this.substituteHp = Math.ceil(pokemon.scene.getPokemonById(this.sourceId).getMaxHp() / 4);
   }
@@ -1553,7 +1553,7 @@ export class SubstituteTag extends BattlerTag {
   onRemove(pokemon: Pokemon): void {
     // Should revert Pokemon's form to its original
     if (this.substituteHp <= 0) {
-      pokemon.scene.queueMessage(getPokemonMessage(pokemon, "'s substitute faded!"));
+      pokemon.scene.queueMessage(i18next.t("battle:battlerTagsSubstituteOnRemove", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) }));
     }
   }
 
@@ -1561,7 +1561,7 @@ export class SubstituteTag extends BattlerTag {
     const ret = (lapseType !== BattlerTagLapseType.CUSTOM || super.lapse(pokemon, lapseType));
 
     if (ret) {
-      pokemon.scene.queueMessage(`The substitute took damage for ${pokemon.name}!`);
+      pokemon.scene.queueMessage(i18next.t("battle:battlerTagsSubstituteOnHit", { pokemonName: pokemon.name }));
     }
 
     return ret;
