@@ -283,4 +283,28 @@ describe("Moves - Substitute", () => {
       expect(leadPokemon.getTag(TrappedTag)).toBeUndefined();
     }, TIMEOUT
   );
+
+  test(
+    "move effect should prevent the user's stats from being lowered",
+    async () => {
+      vi.spyOn(allMoves[Moves.LIQUIDATION], "chance", "get").mockReturnValue(100);
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.LIQUIDATION,Moves.LIQUIDATION,Moves.LIQUIDATION,Moves.LIQUIDATION]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SPLASH));
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(leadPokemon.summonData.battleStats[BattleStat.DEF]).toBe(0);
+    }, TIMEOUT
+  );
 });
