@@ -31,7 +31,7 @@ describe("Moves - Substitute", () => {
     game = new GameManager(phaserGame);
 
     vi.spyOn(overrides, "SINGLE_BATTLE_OVERRIDE", "get").mockReturnValue(true);
-    vi.spyOn(overrides, "MOVESET_OVERRIDE", "get").mockReturnValue([Moves.SUBSTITUTE, Moves.SWORDS_DANCE]);
+    vi.spyOn(overrides, "MOVESET_OVERRIDE", "get").mockReturnValue([Moves.SUBSTITUTE, Moves.SWORDS_DANCE, Moves.TACKLE, Moves.SPLASH]);
     vi.spyOn(overrides, "OPP_SPECIES_OVERRIDE", "get").mockReturnValue(Species.SNORLAX);
     vi.spyOn(overrides, "OPP_ABILITY_OVERRIDE", "get").mockReturnValue(Abilities.INSOMNIA);
     vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.SPLASH, Moves.SPLASH, Moves.SPLASH, Moves.SPLASH]);
@@ -233,6 +233,29 @@ describe("Moves - Substitute", () => {
       await game.phaseInterceptor.to(MoveEndPhase, false);
 
       expect(leadPokemon.summonData.battleStats[BattleStat.ATK]).toBe(2);
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user from flinching",
+    async () => {
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.FAKE_OUT,Moves.FAKE_OUT,Moves.FAKE_OUT,Moves.FAKE_OUT]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.TACKLE));
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(enemyPokemon.hp).toBeLessThan(enemyPokemon.getMaxHp());
     }, TIMEOUT
   );
 });

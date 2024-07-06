@@ -4134,6 +4134,13 @@ export class FlinchAttr extends AddBattlerTagAttr {
   constructor() {
     super(BattlerTagType.FLINCHED, false);
   }
+
+  apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
+    if (!target.getTag(BattlerTagType.SUBSTITUTE) || move.canIgnoreSubstitute(user)) {
+      return super.apply(user, target, move, args);
+    }
+    return false;
+  }
 }
 
 export class ConfuseAttr extends AddBattlerTagAttr {
