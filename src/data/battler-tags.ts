@@ -1561,7 +1561,7 @@ export class SubstituteTag extends BattlerTag {
     const ret = (lapseType !== BattlerTagLapseType.CUSTOM || super.lapse(pokemon, lapseType));
 
     if (ret) {
-      pokemon.scene.queueMessage(i18next.t("battle:battlerTagsSubstituteOnHit", { pokemonName: pokemon.name }));
+      pokemon.scene.queueMessage(i18next.t("battle:battlerTagsSubstituteOnHit", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) }));
     }
 
     return ret;
