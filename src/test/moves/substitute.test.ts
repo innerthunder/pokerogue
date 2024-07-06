@@ -10,6 +10,7 @@ import { BerryPhase, MoveEndPhase } from "#app/phases.js";
 import { BattlerTagType } from "#app/enums/battler-tag-type.js";
 import { BattleStat } from "#app/data/battle-stat.js";
 import { allMoves } from "#app/data/move.js";
+import { TrappedTag } from "#app/data/battler-tags.js";
 
 const TIMEOUT = 20 * 1000; // 20 sec timeout
 
@@ -256,6 +257,30 @@ describe("Moves - Substitute", () => {
       await game.phaseInterceptor.to(BerryPhase, false);
 
       expect(enemyPokemon.hp).toBeLessThan(enemyPokemon.getMaxHp());
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user from being trapped",
+    async () => {
+      vi.spyOn(allMoves[Moves.SAND_TOMB], "accuracy", "get").mockReturnValue(100);
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.SAND_TOMB,Moves.SAND_TOMB,Moves.SAND_TOMB,Moves.SAND_TOMB]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SPLASH));
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(leadPokemon.getTag(TrappedTag)).toBeUndefined();
     }, TIMEOUT
   );
 });

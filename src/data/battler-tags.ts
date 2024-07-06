@@ -123,8 +123,9 @@ export class TrappedTag extends BattlerTag {
   canAdd(pokemon: Pokemon): boolean {
     const isGhost = pokemon.isOfType(Type.GHOST);
     const isTrapped = pokemon.getTag(BattlerTagType.TRAPPED);
+    const hasSubstitute = pokemon.getTag(BattlerTagType.SUBSTITUTE);
 
-    return !isTrapped && !isGhost;
+    return !isTrapped && !isGhost && !hasSubstitute;
   }
 
   onAdd(pokemon: Pokemon): void {
@@ -733,7 +734,7 @@ export abstract class DamagingTrapTag extends TrappedTag {
   }
 
   canAdd(pokemon: Pokemon): boolean {
-    return !pokemon.isOfType(Type.GHOST) && !pokemon.findTag(t => t instanceof DamagingTrapTag);
+    return !pokemon.isOfType(Type.GHOST) && !pokemon.findTag(t => t instanceof DamagingTrapTag) && !pokemon.getTag(BattlerTagType.SUBSTITUTE);
   }
 
   lapse(pokemon: Pokemon, lapseType: BattlerTagLapseType): boolean {
@@ -1548,6 +1549,9 @@ export class SubstituteTag extends BattlerTag {
     pokemon.scene.queueMessage(i18next.t("battle:battlerTagsSubstituteOnAdd", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) }));
 
     this.substituteHp = Math.ceil(pokemon.scene.getPokemonById(this.sourceId).getMaxHp() / 4);
+
+    // Remove trapping effects from the user
+    pokemon.findAndRemoveTags(tag => tag instanceof TrappedTag);
   }
 
   onRemove(pokemon: Pokemon): void {
