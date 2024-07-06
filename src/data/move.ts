@@ -2408,7 +2408,7 @@ export class StatChangeAttr extends MoveEffectAttr {
       return false;
     }
 
-    if (!this.selfTarget && !!target.getTag(BattlerTagType.SUBSTITUTE)) {
+    if (!this.selfTarget && !!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
       return false;
     }
 
