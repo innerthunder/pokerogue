@@ -4633,6 +4633,10 @@ export class ForceSwitchOutAttr extends MoveEffectAttr {
       const switchOutTarget = (this.user ? user : target);
       const player = switchOutTarget instanceof PlayerPokemon;
 
+      if (!this.user && !!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
+        return false;
+      }
+
       if (!this.user && move.category === MoveCategory.STATUS && (target.hasAbilityWithAttr(ForceSwitchOutImmunityAbAttr) || target.isMax())) {
         return false;
       }
@@ -7144,6 +7148,7 @@ export function initMoves() {
     new AttackMove(Moves.SKY_DROP, Type.FLYING, MoveCategory.PHYSICAL, 60, 100, 10, -1, 0, 5)
       .attr(ChargeAttr, ChargeAnim.SKY_DROP_CHARGING, "took {TARGET}\ninto the sky!", BattlerTagType.FLYING) // TODO: Add 2nd turn message
       .condition(failOnGravityCondition)
+      .condition((user, target, move) => !target.getTag(BattlerTagType.SUBSTITUTE))
       .ignoresVirtual(),
     new SelfStatusMove(Moves.SHIFT_GEAR, Type.STEEL, -1, 10, -1, 0, 5)
       .attr(StatChangeAttr, BattleStat.ATK, 1, true)
