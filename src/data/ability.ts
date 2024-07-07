@@ -1560,6 +1560,10 @@ export class PostAttackApplyStatusEffectAbAttr extends PostAttackAbAttr {
   }
 
   applyPostAttack(pokemon: Pokemon, passive: boolean, attacker: Pokemon, move: Move, hitResult: HitResult, args: any[]): boolean {
+    if (pokemon !== attacker && !!pokemon.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(attacker)) {
+      return false;
+    }
+
     /**Status inflicted by abilities post attacking are also considered additional effects.*/
     if (!attacker.hasAbilityWithAttr(IgnoreMoveEffectsAbAttr) && pokemon !== attacker && (!this.contactRequired || move.checkFlag(MoveFlags.MAKES_CONTACT, attacker, pokemon)) && pokemon.randSeedInt(100) < this.chance && !pokemon.status) {
       const effect = this.effects.length === 1 ? this.effects[0] : this.effects[pokemon.randSeedInt(this.effects.length)];
@@ -1911,6 +1915,10 @@ export class PostSummonStatChangeAbAttr extends PostSummonAbAttr {
       if (this.intimidate) {
         applyAbAttrs(IntimidateImmunityAbAttr, opponent, cancelled);
         applyAbAttrs(PostIntimidateStatChangeAbAttr, opponent, cancelled);
+        
+        if (!!opponent.getTag(BattlerTagType.SUBSTITUTE)) { 
+          cancelled.value = true;
+        }
       }
       if (!cancelled.value) {
         const statChangePhase = new StatChangePhase(pokemon.scene, opponent.getBattlerIndex(), false, this.stats, this.levels);

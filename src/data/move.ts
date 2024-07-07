@@ -1768,6 +1768,10 @@ export class StatusEffectAttr extends MoveEffectAttr {
   }
 
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
+    if (!this.selfTarget && !!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
+      return false;
+    }
+
     const moveChance = this.getMoveChance(user,target,move,this.selfTarget);
     const statusCheck = moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance;
     if (statusCheck) {

@@ -11,6 +11,7 @@ import { BattlerTagType } from "#app/enums/battler-tag-type.js";
 import { BattleStat } from "#app/data/battle-stat.js";
 import { allMoves } from "#app/data/move.js";
 import { TrappedTag } from "#app/data/battler-tags.js";
+import { StatusEffect } from "#app/data/status-effect.js";
 
 const TIMEOUT = 20 * 1000; // 20 sec timeout
 
@@ -305,6 +306,29 @@ describe("Moves - Substitute", () => {
       await game.phaseInterceptor.to(BerryPhase, false);
 
       expect(leadPokemon.summonData.battleStats[BattleStat.DEF]).toBe(0);
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user from being afflicted with status effects",
+    async () => {
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.NUZZLE,Moves.NUZZLE,Moves.NUZZLE,Moves.NUZZLE]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SPLASH));
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(leadPokemon.status?.effect).not.toBe(StatusEffect.PARALYSIS);
     }, TIMEOUT
   );
 });
