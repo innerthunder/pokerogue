@@ -133,7 +133,7 @@ export const battle: SimpleTranslationEntries = {
   "battlerTagsSaltCuredLapse": "{{pokemonNameWithAffix}} viene colpito da {{moveName}}!",
   "battlerTagsCursedOnAdd": "{{pokemonNameWithAffix}} ha sacrificato metà dei suoi PS per\nlanciare una maledizione su {{pokemonName}}!",
   "battlerTagsCursedLapse": "{{pokemonNameWithAffix}} subisce la maledizione!",
-  "battlerTagsSubstituteOnAdd": "{{pokemonNameWithAffix}} put in a substitute!",
-  "battlerTagsSubstituteOnHit": "The substitute took damage for {{pokemonNameWithAffix}}!",
-  "battlerTagsSubstituteOnRemove": "{{pokemonNameWithAffix}}'s substitute faded!"
+  "battlerTagsSubstituteOnAdd": "Appare un sostituto di {{pokemonNameWithAffix}}!",
+  "battlerTagsSubstituteOnHit": "Il sostituto viene colpito al posto di {{pokemonNameWithAffix}}!",
+  "battlerTagsSubstituteOnRemove": "Il sostituto di {{pokemonNameWithAffix}} svanisce!"
 } as const;
