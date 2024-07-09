@@ -9,9 +9,10 @@ import { getMovePosition } from "../utils/gameManagerUtils";
 import { BerryPhase, MoveEndPhase } from "#app/phases.js";
 import { BattlerTagType } from "#app/enums/battler-tag-type.js";
 import { BattleStat } from "#app/data/battle-stat.js";
-import { allMoves } from "#app/data/move.js";
+import { allMoves, StealHeldItemChanceAttr } from "#app/data/move.js";
 import { TrappedTag } from "#app/data/battler-tags.js";
 import { StatusEffect } from "#app/data/status-effect.js";
+import { BerryType } from "#app/enums/berry-type.js";
 
 const TIMEOUT = 20 * 1000; // 20 sec timeout
 
@@ -242,6 +243,7 @@ describe("Moves - Substitute", () => {
     "move effect should prevent the user from flinching",
     async () => {
       vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.FAKE_OUT,Moves.FAKE_OUT,Moves.FAKE_OUT,Moves.FAKE_OUT]);
+      vi.spyOn(overrides, "STARTING_LEVEL_OVERRIDE", "get").mockReturnValue(1); // Ensures the Substitute will break
 
       await game.startBattle([Species.BLASTOISE]);
 
@@ -329,6 +331,107 @@ describe("Moves - Substitute", () => {
       await game.phaseInterceptor.to(BerryPhase, false);
 
       expect(leadPokemon.status?.effect).not.toBe(StatusEffect.PARALYSIS);
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user's items from being stolen",
+    async () => {
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.THIEF,Moves.THIEF,Moves.THIEF,Moves.THIEF]);
+      vi.spyOn(allMoves[Moves.THIEF], "attrs", "get").mockReturnValue([new StealHeldItemChanceAttr(1.0)]); // give Thief 100% steal rate
+      vi.spyOn(overrides, "STARTING_HELD_ITEMS_OVERRIDE", "get").mockReturnValue([{name: "BERRY", type: BerryType.SITRUS}]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SPLASH));
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(leadPokemon.getHeldItems().length).toBe(1);
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user's items from being removed",
+    async () => {
+      vi.spyOn(overrides, "MOVESET_OVERRIDE", "get").mockReturnValue([Moves.KNOCK_OFF]);
+      vi.spyOn(overrides, "OPP_HELD_ITEMS_OVERRIDE", "get").mockReturnValue([{name: "BERRY", type: BerryType.SITRUS}]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      enemyPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, enemyPokemon.id);
+      const enemyNumItems = enemyPokemon.getHeldItems().length;
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.KNOCK_OFF));
+
+      await game.phaseInterceptor.to(MoveEndPhase, false);
+
+      expect(enemyPokemon.getHeldItems().length).toBe(enemyNumItems);
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user's berries from being stolen and eaten",
+    async () => {
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.BUG_BITE,Moves.BUG_BITE,Moves.BUG_BITE,Moves.BUG_BITE]);
+      vi.spyOn(overrides, "STARTING_HELD_ITEMS_OVERRIDE", "get").mockReturnValue([{name: "BERRY", type: BerryType.SITRUS}]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.TACKLE));
+
+      await game.phaseInterceptor.to(MoveEndPhase, false);
+      const enemyPostAttackHp = enemyPokemon.hp;
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(leadPokemon.getHeldItems().length).toBe(1);
+      expect(enemyPokemon.hp).toBe(enemyPostAttackHp);
+    }, TIMEOUT
+  );
+
+  test(
+    "move effect should prevent the user's stats from being reset by Clear Smog",
+    async () => {
+      vi.spyOn(overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.CLEAR_SMOG,Moves.CLEAR_SMOG,Moves.CLEAR_SMOG,Moves.CLEAR_SMOG]);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+      expect(leadPokemon).toBeDefined();
+
+      const enemyPokemon = game.scene.getEnemyPokemon();
+      expect(enemyPokemon).toBeDefined();
+
+      leadPokemon.addTag(BattlerTagType.SUBSTITUTE, null, null, leadPokemon.id);
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SWORDS_DANCE));
+
+      await game.phaseInterceptor.to(BerryPhase, false);
+
+      expect(leadPokemon.summonData.battleStats[BattleStat.ATK]).toBe(2);
     }, TIMEOUT
   );
 });

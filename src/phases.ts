@@ -19,7 +19,7 @@ import { biomeLinks, getBiomeName } from "./data/biomes";
 import { ModifierTier } from "./modifier/modifier-tier";
 import { FusePokemonModifierType, ModifierPoolType, ModifierType, ModifierTypeFunc, ModifierTypeOption, PokemonModifierType, PokemonMoveModifierType, PokemonPpRestoreModifierType, PokemonPpUpModifierType, RememberMoveModifierType, TmModifierType, getDailyRunStarterModifiers, getEnemyBuffModifierForWave, getModifierType, getPlayerModifierTypeOptions, getPlayerShopModifierTypeOptionsForWave, modifierTypes, regenerateModifierPoolThresholds } from "./modifier/modifier-type";
 import SoundFade from "phaser3-rex-plugins/plugins/soundfade";
-import { BattlerTagLapseType, CenterOfAttentionTag, EncoreTag, ProtectedTag, SemiInvulnerableTag, TrappedTag } from "./data/battler-tags";
+import { BattlerTagLapseType, CenterOfAttentionTag, EncoreTag, ProtectedTag, SemiInvulnerableTag, SubstituteTag, TrappedTag } from "./data/battler-tags";
 import { getPokemonMessage, getPokemonNameWithAffix } from "./messages";
 import { Starter } from "./ui/starter-select-ui-handler";
 import { Gender } from "./data/gender";
@@ -2997,7 +2997,20 @@ export class MoveEffectPhase extends PokemonPhase {
           }
         }
 
-        Promise.allSettled(applyAttrs).then(() => this.end());
+        Promise.allSettled(applyAttrs).then(() => {
+          /**
+           * Remove the target's substitute (if it exists and has expired)
+           * after all targeted effects have applied.
+           * This prevents blocked effects from applying until after this hit resolves.
+           */
+          targets.forEach(target => {
+            const substituteTag = target.getTag(SubstituteTag);
+            if (!!substituteTag && substituteTag instanceof SubstituteTag && substituteTag.substituteHp <= 0) {
+              target.lapseTag(BattlerTagType.SUBSTITUTE);
+            }
+          });
+          this.end();
+        });
       });
     });
   }

@@ -1861,6 +1861,9 @@ export class StealHeldItemChanceAttr extends MoveEffectAttr {
 
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): Promise<boolean> {
     return new Promise<boolean>(resolve => {
+      if (!!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
+        return resolve(false);
+      }
       const rand = Phaser.Math.RND.realInRange(0, 1);
       if (rand >= this.chance) {
         return resolve(false);
@@ -1928,6 +1931,10 @@ export class RemoveHeldItemAttr extends MoveEffectAttr {
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
 
     if (!this.berriesOnly && target.isPlayer()) { // "Wild Pokemon cannot knock off Player Pokemon's held items" (See Bulbapedia)
+      return false;
+    }
+
+    if (!!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
       return false;
     }
 
@@ -2050,6 +2057,9 @@ export class StealEatBerryAttr extends EatBerryAttr {
    * @returns {boolean} true if the function succeeds
    */
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
+    if (!!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
+      return false;
+    }
     const cancelled = new Utils.BooleanHolder(false);
     applyAbAttrs(BlockItemTheftAbAttr, target, cancelled); // check for abilities that block item theft
     if (cancelled.value === true) {
@@ -2096,6 +2106,10 @@ export class HealStatusEffectAttr extends MoveEffectAttr {
    */
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
     if (!super.apply(user, target, move, args)) {
+      return false;
+    }
+
+    if (!this.selfTarget && !!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
       return false;
     }
 
@@ -2626,6 +2640,10 @@ export class InvertStatsAttr extends MoveEffectAttr {
 export class ResetStatsAttr extends MoveEffectAttr {
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
     if (!super.apply(user, target, move, args)) {
+      return false;
+    }
+
+    if (!!target.getTag(BattlerTagType.SUBSTITUTE) && !move.canIgnoreSubstitute(user)) {
       return false;
     }
 
