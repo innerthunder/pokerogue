@@ -2983,6 +2983,10 @@ export class MoveEffectPhase extends PokemonPhase {
 
           const hitResult = !isProtected ? target.apply(user, move) : HitResult.NO_EFFECT;
 
+          if (hitResult === HitResult.NO_EFFECT) {
+            moveHistoryEntry.result = MoveResult.FAIL;
+          }
+
           const lastHit = (user.turnData.hitsLeft === 1 || !this.getTarget()?.isActive());
 
           if (lastHit) {
