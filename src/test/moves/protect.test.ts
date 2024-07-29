@@ -44,10 +44,6 @@ describe("Moves - Protect", () => {
       await game.startBattle([Species.CHARIZARD]);
 
       const leadPokemon = game.scene.getPlayerPokemon();
-      expect(leadPokemon).toBeDefined();
-
-      const enemyPokemon = game.scene.getEnemyPokemon();
-      expect(enemyPokemon).toBeDefined();
 
       game.doAttack(getMovePosition(game.scene, 0, Moves.PROTECT));
 
@@ -57,7 +53,7 @@ describe("Moves - Protect", () => {
     }, TIMEOUT
   );
 
-  test.skip(
+  test(
     "should prevent secondary effects from the opponent's attack",
     async () => {
       vi.spyOn(Overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.CEASELESS_EDGE,Moves.CEASELESS_EDGE,Moves.CEASELESS_EDGE,Moves.CEASELESS_EDGE]);
@@ -66,10 +62,6 @@ describe("Moves - Protect", () => {
       await game.startBattle([Species.CHARIZARD]);
 
       const leadPokemon = game.scene.getPlayerPokemon();
-      expect(leadPokemon).toBeDefined();
-
-      const enemyPokemon = game.scene.getEnemyPokemon();
-      expect(enemyPokemon).toBeDefined();
 
       game.doAttack(getMovePosition(game.scene, 0, Moves.PROTECT));
 
@@ -88,10 +80,6 @@ describe("Moves - Protect", () => {
       await game.startBattle([Species.CHARIZARD]);
 
       const leadPokemon = game.scene.getPlayerPokemon();
-      expect(leadPokemon).toBeDefined();
-
-      const enemyPokemon = game.scene.getEnemyPokemon();
-      expect(enemyPokemon).toBeDefined();
 
       game.doAttack(getMovePosition(game.scene, 0, Moves.PROTECT));
 
@@ -109,10 +97,8 @@ describe("Moves - Protect", () => {
       await game.startBattle([Species.CHARIZARD]);
 
       const leadPokemon = game.scene.getPlayerPokemon();
-      expect(leadPokemon).toBeDefined();
 
       const enemyPokemon = game.scene.getEnemyPokemon();
-      expect(enemyPokemon).toBeDefined();
 
       game.doAttack(getMovePosition(game.scene, 0, Moves.PROTECT));
 
