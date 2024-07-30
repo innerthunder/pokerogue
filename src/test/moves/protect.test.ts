@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import GameManager from "../utils/gameManager";
-import Overrides from "#app/overrides";
 import { Species } from "#enums/species";
 import { Abilities } from "#enums/abilities";
 import { Moves } from "#enums/moves";
@@ -29,13 +28,17 @@ describe("Moves - Protect", () => {
 
   beforeEach(() => {
     game = new GameManager(phaserGame);
-    vi.spyOn(Overrides, "BATTLE_TYPE_OVERRIDE", "get").mockReturnValue("single");
-    vi.spyOn(Overrides, "MOVESET_OVERRIDE", "get").mockReturnValue([Moves.PROTECT]);
-    vi.spyOn(Overrides, "OPP_SPECIES_OVERRIDE", "get").mockReturnValue(Species.SNORLAX);
-    vi.spyOn(Overrides, "OPP_ABILITY_OVERRIDE", "get").mockReturnValue(Abilities.INSOMNIA);
-    vi.spyOn(Overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.TACKLE, Moves.TACKLE, Moves.TACKLE, Moves.TACKLE]);
-    vi.spyOn(Overrides, "STARTING_LEVEL_OVERRIDE", "get").mockReturnValue(100);
-    vi.spyOn(Overrides, "OPP_LEVEL_OVERRIDE", "get").mockReturnValue(100);
+
+    game.override.battleType("single");
+
+    game.override.moveset([Moves.PROTECT]);
+    game.override.enemySpecies(Species.SNORLAX);
+
+    game.override.enemyAbility(Abilities.INSOMNIA);
+    game.override.enemyMoveset(Array(4).fill(Moves.TACKLE));
+
+    game.override.startingLevel(100);
+    game.override.enemyLevel(100);
   });
 
   test(
@@ -56,7 +59,7 @@ describe("Moves - Protect", () => {
   test(
     "should prevent secondary effects from the opponent's attack",
     async () => {
-      vi.spyOn(Overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.CEASELESS_EDGE,Moves.CEASELESS_EDGE,Moves.CEASELESS_EDGE,Moves.CEASELESS_EDGE]);
+      game.override.enemyMoveset(Array(4).fill(Moves.CEASELESS_EDGE));
       vi.spyOn(allMoves[Moves.CEASELESS_EDGE], "accuracy", "get").mockReturnValue(100);
 
       await game.startBattle([Species.CHARIZARD]);
@@ -75,7 +78,7 @@ describe("Moves - Protect", () => {
   test(
     "should protect the user from status moves",
     async () => {
-      vi.spyOn(Overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.CHARM, Moves.CHARM, Moves.CHARM, Moves.CHARM]);
+      game.override.enemyMoveset(Array(4).fill(Moves.CHARM));
 
       await game.startBattle([Species.CHARIZARD]);
 
@@ -92,7 +95,7 @@ describe("Moves - Protect", () => {
   test(
     "should stop subsequent hits of a multi-hit move",
     async () => {
-      vi.spyOn(Overrides, "OPP_MOVESET_OVERRIDE", "get").mockReturnValue([Moves.TACHYON_CUTTER,Moves.TACHYON_CUTTER,Moves.TACHYON_CUTTER,Moves.TACHYON_CUTTER]);
+      game.override.enemyMoveset(Array(4).fill(Moves.TACHYON_CUTTER));
 
       await game.startBattle([Species.CHARIZARD]);
 
