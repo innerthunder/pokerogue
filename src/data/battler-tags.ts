@@ -386,6 +386,128 @@ export class InfatuatedTag extends BattlerTag {
   }
 }
 
+/**
+ * Condition function type for effects that disable the source's move(s).
+ * This should return `true` only for moves that are disabled by the associated effect.
+ */
+type MoveDisablingCondition = (pokemon: Pokemon, moveId: Moves) => boolean;
+
+/**
+ * Abstract Battler tag class for effects that disable moves
+ * @see {@link https://bulbapedia.bulbagarden.net/wiki/Move_variations#Variations_of_Disable | Variations of the move Disable}
+ */
+export abstract class MoveDisablingTag extends BattlerTag {
+  public condition: MoveDisablingCondition;
+
+  constructor(tagType: BattlerTagType, turnCount: number, condition: MoveDisablingCondition, sourceMove?: Moves, sourceId?: number) {
+    super(tagType, [ BattlerTagLapseType.PRE_MOVE, BattlerTagLapseType.TURN_END ], turnCount, sourceMove ?? Moves.NONE, sourceId);
+
+    this.condition = condition;
+  }
+
+  /**
+   * Handles functionality
+   * @param pokemon
+   * @param lapseType
+   * @returns
+   */
+  lapse(pokemon: Pokemon, lapseType: BattlerTagLapseType): boolean {
+    if (lapseType === BattlerTagLapseType.PRE_MOVE) {
+      const movePhase = pokemon.scene.getCurrentPhase();
+      if (!!movePhase && movePhase instanceof MovePhase) {
+        const move = movePhase.move.moveId;
+        // If the move about to be used meets conditions for disabling, cancel it.
+        if (this.condition(pokemon, move)) {
+          movePhase.cancel();
+
+          const cancelMessage = this.getCancelMessage(pokemon, movePhase.move.moveId);
+          if (cancelMessage) {
+            pokemon.scene.queueMessage(this.getCancelMessage(pokemon, movePhase.move.moveId));
+          }
+
+          return true;
+        }
+      }
+    }
+    return lapseType === BattlerTagLapseType.PRE_MOVE || super.lapse(pokemon, lapseType);
+  }
+
+  /**
+   * Queues a message to indicate that the tag and its effects were removed.
+   * @param pokemon {@linkcode Pokemon} the source of this tag.
+   */
+  onRemove(pokemon: Pokemon): void {
+    const removeMessage = this.getRemoveMessage(pokemon);
+
+    if (removeMessage) {
+      pokemon.scene.queueMessage(removeMessage);
+    }
+  }
+
+  /**
+   * Generates the message to show when a move is cancelled by this tag's effect.
+   * @param pokemon {@linkcode Pokemon} the source of this tag.
+   * @param move {@linkcode Moves} the move disabled by this tag's effect.
+   * @returns the message to show when a move is disabled, or `null`
+   * if there is no such message.
+   */
+  getCancelMessage(pokemon: Pokemon, move: Moves): string | null {
+    return null;
+  }
+
+  /**
+   * Generates the message to show when this tag'e effects are removed from the source
+   * @param pokemon {@linkcode Pokemon} the source of this tag.
+   * @returns the message to show when this tag's effects are removed, or `null`
+   * if there is no such message.
+   */
+  getRemoveMessage(pokemon: Pokemon): string | null {
+    return null;
+  }
+}
+
+/**
+ * Battler tag class representing the effects of the move Disable.
+ * @see {@link https://bulbapedia.bulbagarden.net/wiki/Disable_(move) | Disable}
+ * @see {@link https://bulbapedia.bulbagarden.net/wiki/Cursed_Body_(Ability) | Cursed Body}
+ */
+export class DisableTag extends MoveDisablingTag {
+  private disabledMove: Moves;
+
+  constructor(turnCount: number) {
+    super(BattlerTagType.DISABLED, turnCount, (pokemon, move) => {
+      return move === this.disabledMove;
+    });
+  }
+
+  onAdd(pokemon: Pokemon): void {
+    // Get the source's last used non-virtual move
+    const lastUsedMove = pokemon.getLastXMoves().find(m => !m.virtual);
+
+    // If the source has that move in its learnset, register it as the disabled move
+    if (pokemon.getMoveset().map(m => m.moveId).includes(lastUsedMove.move)) {
+      this.disabledMove = lastUsedMove.move;
+      pokemon.scene.queueMessage(i18next.t("abilityTriggers:postDefendMoveDisable", {
+        pokemonNameWithAffix: getPokemonNameWithAffix(pokemon),
+        moveName: allMoves[this.disabledMove].name,
+      })); // TODO: Replace with i18n key
+    }
+  }
+
+  getCancelMessage(pokemon: Pokemon, move: Moves): string | null {
+    return i18next.t("battle:moveDisabled", {
+      moveName: allMoves[move].name
+    });
+  }
+
+  getRemoveMessage(pokemon: Pokemon): string | null {
+    return i18next.t("battle:notDisabled", {
+      pokemonName: getPokemonNameWithAffix(pokemon),
+      moveName: allMoves[this.disabledMove].name
+    });
+  }
+}
+
 export class SeedTag extends BattlerTag {
   private sourceIndex: number;
 
@@ -1770,6 +1892,8 @@ export function getBattlerTag(tagType: BattlerTagType, turnCount: number, source
     return new StockpilingTag(sourceMove);
   case BattlerTagType.OCTOLOCK:
     return new OctolockTag(sourceId);
+  case BattlerTagType.DISABLED:
+    return new DisableTag(turnCount);
   case BattlerTagType.NONE:
   default:
     return new BattlerTag(tagType, BattlerTagLapseType.CUSTOM, turnCount, sourceMove, sourceId);

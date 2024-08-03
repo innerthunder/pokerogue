@@ -19,7 +19,7 @@ import { pokemonEvolutions, pokemonPrevolutions, SpeciesFormEvolution, SpeciesEv
 import { reverseCompatibleTms, tmSpecies, tmPoolTiers } from "../data/tms";
 import { DamagePhase, FaintPhase, LearnMovePhase, MoveEffectPhase, ObtainStatusEffectPhase, StatChangePhase, SwitchSummonPhase, ToggleDoublePositionPhase, MoveEndPhase } from "../phases";
 import { BattleStat } from "../data/battle-stat";
-import { BattlerTag, BattlerTagLapseType, EncoreTag, GroundedTag, HighestStatBoostTag, TypeImmuneTag, getBattlerTag, SemiInvulnerableTag, TypeBoostTag } from "../data/battler-tags";
+import { BattlerTag, BattlerTagLapseType, EncoreTag, GroundedTag, HighestStatBoostTag, TypeImmuneTag, getBattlerTag, SemiInvulnerableTag, TypeBoostTag, MoveDisablingTag } from "../data/battler-tags";
 import { WeatherType } from "../data/weather";
 import { TempBattleStat } from "../data/temp-battle-stat";
 import { ArenaTagSide, WeakenMoveScreenTag } from "../data/arena-tag";
@@ -2436,6 +2436,21 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Determines whether a move is disabled for this Pokemon.
+   * @see {@linkcode MoveDisablingTag}
+   * @param moveId {@linkcode Moves} the move checked against disabling effects
+   * @returns `true` if the given move is disabled
+   */
+  isMoveDisabled(moveId: Moves): boolean {
+    for (const tag of this.findTags(t => t instanceof MoveDisablingTag)) {
+      if ((tag as MoveDisablingTag).condition(this, moveId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * If this Pokemon is using a multi-hit move, cancels all subsequent strikes
    * @param {Pokemon} target If specified, this only cancels subsequent strikes against the given target
    */
@@ -4144,8 +4159,6 @@ export interface AttackMoveResult {
 export class PokemonSummonData {
   public battleStats: integer[] = [ 0, 0, 0, 0, 0, 0, 0 ];
   public moveQueue: QueuedMove[] = [];
-  public disabledMove: Moves = Moves.NONE;
-  public disabledTurns: integer = 0;
   public tags: BattlerTag[] = [];
   public abilitySuppressed: boolean = false;
   public abilitiesApplied: Abilities[] = [];
@@ -4245,7 +4258,7 @@ export class PokemonMove {
   }
 
   isUsable(pokemon: Pokemon, ignorePp?: boolean): boolean {
-    if (this.moveId && pokemon.summonData?.disabledMove === this.moveId) {
+    if (this.moveId && pokemon.isMoveDisabled(this.moveId)) {
       return false;
     }
     return (ignorePp || this.ppUsed < this.getMovePp() || this.getMove().pp === -1) && !this.getMove().name.endsWith(" (N)");

@@ -4111,70 +4111,6 @@ export class TypelessAttr extends MoveAttr { }
 */
 export class BypassRedirectAttr extends MoveAttr { }
 
-export class DisableMoveAttr extends MoveEffectAttr {
-  constructor() {
-    super(false);
-  }
-
-  apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
-    if (!super.apply(user, target, move, args)) {
-      return false;
-    }
-
-    const moveQueue = target.getLastXMoves();
-    let turnMove: TurnMove;
-    while (moveQueue.length) {
-      turnMove = moveQueue.shift();
-      if (turnMove.virtual) {
-        continue;
-      }
-
-      const moveIndex = target.getMoveset().findIndex(m => m.moveId === turnMove.move);
-      if (moveIndex === -1) {
-        return false;
-      }
-
-      const disabledMove = target.getMoveset()[moveIndex];
-      target.summonData.disabledMove = disabledMove.moveId;
-      target.summonData.disabledTurns = 4;
-
-      user.scene.queueMessage(getPokemonMessage(target, `'s ${disabledMove.getName()}\nwas disabled!`));
-
-      return true;
-    }
-
-    return false;
-  }
-
-  getCondition(): MoveConditionFunc {
-    return (user, target, move) => {
-      if (target.summonData.disabledMove || target.isMax()) {
-        return false;
-      }
-
-      const moveQueue = target.getLastXMoves();
-      let turnMove: TurnMove;
-      while (moveQueue.length) {
-        turnMove = moveQueue.shift();
-        if (turnMove.virtual) {
-          continue;
-        }
-
-        const move = target.getMoveset().find(m => m.moveId === turnMove.move);
-        if (!move) {
-          continue;
-        }
-
-        return true;
-      }
-    };
-  }
-
-  getTargetBenefitScore(user: Pokemon, target: Pokemon, move: Move): integer {
-    return -5;
-  }
-}
-
 export class FrenzyAttr extends MoveEffectAttr {
   constructor() {
     super(true, MoveEffectTrigger.HIT, false, true);
@@ -4256,6 +4192,7 @@ export class AddBattlerTagAttr extends MoveEffectAttr {
     case BattlerTagType.NIGHTMARE:
     case BattlerTagType.DROWSY:
     case BattlerTagType.NO_CRIT:
+    case BattlerTagType.DISABLED:
       return -5;
     case BattlerTagType.SEEDED:
     case BattlerTagType.SALT_CURED:
@@ -4416,6 +4353,30 @@ export class ProtectAttr extends AddBattlerTagAttr {
       }
       return true;
     });
+  }
+}
+
+export class DisableAttr extends AddBattlerTagAttr {
+  constructor() {
+    super(BattlerTagType.DISABLED, false, true, 4);
+  }
+
+  getCondition(): MoveConditionFunc {
+    return (user, target, move) => {
+      // Get the target's last used non-virtual move
+      const targetLastMove = target.getLastXMoves().find(m => !m.virtual);
+      /**
+       * This move succeeds if:
+       * - The target has used a non-virtual move
+       * - The last non-virtual move used is in the target's moveset
+       * - The target is not a Gigantamax form
+       * - Conditions from AddBattlerTagAttr are also met
+       */
+      return !!targetLastMove
+        && target.getMoveset().map(m => m.moveId).includes(targetLastMove.move)
+        && !target.isMax()
+        && super.getCondition()(user, target, move);
+    };
   }
 }
 
@@ -6114,8 +6075,7 @@ export function initMoves() {
     new AttackMove(Moves.SONIC_BOOM, Type.NORMAL, MoveCategory.SPECIAL, -1, 90, 20, -1, 0, 1)
       .attr(FixedDamageAttr, 20),
     new StatusMove(Moves.DISABLE, Type.NORMAL, 100, 20, -1, 0, 1)
-      .attr(DisableMoveAttr)
-      .condition(failOnMaxCondition),
+      .attr(DisableAttr),
     new AttackMove(Moves.ACID, Type.POISON, MoveCategory.SPECIAL, 40, 100, 30, 10, 0, 1)
       .attr(StatChangeAttr, BattleStat.SPDEF, -1)
       .target(MoveTarget.ALL_NEAR_ENEMIES),
