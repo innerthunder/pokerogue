@@ -102,4 +102,26 @@ describe("Moves - Disable", () => {
       expect(leadPokemon.isMoveDisabled(Moves.STRUGGLE)).toBeFalsy();
     }, TIMEOUT
   );
+
+  it(
+    "should cancel disabled moves mid-turn",
+    async () => {
+      game.override.enemySpecies(Species.MEOWSCARADA);
+
+      await game.startBattle([Species.BLASTOISE]);
+
+      const leadPokemon = game.scene.getPlayerPokemon();
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SPLASH));
+
+      await game.phaseInterceptor.to(TurnEndPhase);
+      expect(leadPokemon.isMoveDisabled(Moves.SPLASH)).toBeFalsy();
+
+      game.doAttack(getMovePosition(game.scene, 0, Moves.SPLASH));
+
+      await game.phaseInterceptor.to(TurnEndPhase);
+      expect(leadPokemon.getLastXMoves()[0]?.result).toBe(MoveResult.FAIL);
+      expect(leadPokemon.isMoveDisabled(Moves.SPLASH)).toBeTruthy();
+    }, TIMEOUT
+  );
 });
