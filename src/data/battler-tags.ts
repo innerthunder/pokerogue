@@ -387,54 +387,39 @@ export class InfatuatedTag extends BattlerTag {
 }
 
 /**
- * Condition function type for effects that disable the source's move(s).
- * This should return `true` only for moves that are disabled by the associated effect.
- */
-type MoveDisablingCondition = (pokemon: Pokemon, moveId: Moves) => boolean;
-
-/**
  * Abstract Battler tag class for effects that disable moves
  * @see {@link https://bulbapedia.bulbagarden.net/wiki/Move_variations#Variations_of_Disable | Variations of the move Disable}
  */
 export abstract class MoveDisablingTag extends BattlerTag {
-  public condition: MoveDisablingCondition;
-
-  constructor(tagType: BattlerTagType, turnCount: number, condition: MoveDisablingCondition, sourceMove?: Moves, sourceId?: number) {
+  constructor(tagType: BattlerTagType, turnCount: number, sourceMove?: Moves, sourceId?: number) {
     super(tagType, [ BattlerTagLapseType.PRE_MOVE, BattlerTagLapseType.TURN_END ], turnCount, sourceMove ?? Moves.NONE, sourceId);
-
-    this.condition = condition;
   }
 
-  /**
-   * Handles functionality
-   * @param pokemon
-   * @param lapseType
-   * @returns
-   */
+  abstract isMoveDisabled(pokemon: Pokemon, move: Moves): boolean;
+
   lapse(pokemon: Pokemon, lapseType: BattlerTagLapseType): boolean {
     if (lapseType === BattlerTagLapseType.PRE_MOVE) {
       const movePhase = pokemon.scene.getCurrentPhase();
       if (!!movePhase && movePhase instanceof MovePhase) {
         const move = movePhase.move.moveId;
         // If the move about to be used meets conditions for disabling, cancel it.
-        if (this.condition(pokemon, move)) {
+        if (this.isMoveDisabled(pokemon, move)) {
           movePhase.cancel();
 
           const cancelMessage = this.getCancelMessage(pokemon, movePhase.move.moveId);
           if (cancelMessage) {
             pokemon.scene.queueMessage(this.getCancelMessage(pokemon, movePhase.move.moveId));
           }
-
-          return true;
         }
       }
+      return true;
     }
-    return lapseType === BattlerTagLapseType.PRE_MOVE || super.lapse(pokemon, lapseType);
+    return super.lapse(pokemon, lapseType);
   }
 
   /**
    * Queues a message to indicate that the tag and its effects were removed.
-   * @param pokemon {@linkcode Pokemon} the source of this tag.
+   * @param pokemon {@linkcode Pokemon} the owner of this tag.
    */
   onRemove(pokemon: Pokemon): void {
     const removeMessage = this.getRemoveMessage(pokemon);
@@ -446,7 +431,7 @@ export abstract class MoveDisablingTag extends BattlerTag {
 
   /**
    * Generates the message to show when a move is cancelled by this tag's effect.
-   * @param pokemon {@linkcode Pokemon} the source of this tag.
+   * @param pokemon {@linkcode Pokemon} the owner of this tag.
    * @param move {@linkcode Moves} the move disabled by this tag's effect.
    * @returns the message to show when a move is disabled, or `null`
    * if there is no such message.
@@ -457,7 +442,7 @@ export abstract class MoveDisablingTag extends BattlerTag {
 
   /**
    * Generates the message to show when this tag'e effects are removed from the source
-   * @param pokemon {@linkcode Pokemon} the source of this tag.
+   * @param pokemon {@linkcode Pokemon} the owner of this tag.
    * @returns the message to show when this tag's effects are removed, or `null`
    * if there is no such message.
    */
@@ -475,9 +460,11 @@ export class DisableTag extends MoveDisablingTag {
   private disabledMove: Moves;
 
   constructor(turnCount: number) {
-    super(BattlerTagType.DISABLED, turnCount, (pokemon, move) => {
-      return move === this.disabledMove;
-    });
+    super(BattlerTagType.DISABLED, turnCount);
+  }
+
+  isMoveDisabled(pokemon: Pokemon, move: Moves): boolean {
+    return move === this.disabledMove;
   }
 
   onAdd(pokemon: Pokemon): void {
@@ -490,7 +477,7 @@ export class DisableTag extends MoveDisablingTag {
       pokemon.scene.queueMessage(i18next.t("abilityTriggers:postDefendMoveDisable", {
         pokemonNameWithAffix: getPokemonNameWithAffix(pokemon),
         moveName: allMoves[this.disabledMove].name,
-      })); // TODO: Replace with i18n key
+      }));
     }
   }
 
