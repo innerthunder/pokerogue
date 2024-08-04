@@ -4169,7 +4169,10 @@ export class AddBattlerTagAttr extends MoveEffectAttr {
 
     const moveChance = this.getMoveChance(user, target, move, this.selfTarget, true);
     if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance) {
-      return (this.selfTarget ? user : target).addTag(this.tagType,  user.randSeedInt(this.turnCountMax - this.turnCountMin, this.turnCountMin), move.id, user.id);
+      const turnCount = this.turnCountMin === this.turnCountMax
+        ? this.turnCountMin
+        : user.randSeedInt(this.turnCountMax - this.turnCountMin, this.turnCountMin);
+      return (this.selfTarget ? user : target).addTag(this.tagType, turnCount, move.id, user.id);
     }
 
     return false;
@@ -4374,6 +4377,7 @@ export class DisableAttr extends AddBattlerTagAttr {
        */
       return !!targetLastMove
         && target.getMoveset().map(m => m.moveId).includes(targetLastMove.move)
+        && targetLastMove.move !== Moves.STRUGGLE
         && !target.isMax()
         && super.getCondition()(user, target, move);
     };

@@ -2442,11 +2442,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * @returns `true` if the given move is disabled
    */
   isMoveDisabled(moveId: Moves): boolean {
-    const disablingTags = this.findTags(t => t instanceof MoveDisablingTag);
-    console.log(`Found ${disablingTags.length} disabling tags`);
     for (const tag of this.findTags(t => t instanceof MoveDisablingTag)) {
       if ((tag as MoveDisablingTag).isMoveDisabled(this, moveId)) {
-        console.log(`Found effect that disables ${allMoves[moveId].name}`);
         return true;
       }
     }
