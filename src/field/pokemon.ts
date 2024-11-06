@@ -4707,21 +4707,18 @@ export class EnemyPokemon extends Pokemon {
       }
     }
 
+    const encoreTag = this.getTag(EncoreTag);
+    const encoredMove = this.getMoveset().find(m => m?.moveId === encoreTag?.moveId);
+    console.log(encoredMove);
     // Filter out any moves this Pokemon cannot use
-    let movePool = this.getMoveset().filter(m => m?.isUsable(this));
+    let movePool = this.getMoveset()
+      .filter(m => !encoredMove || encoredMove?.getMovePp() === 0 || m === encoredMove)
+      .filter(m => m?.isUsable(this));
     // If no moves are left, use Struggle. Otherwise, continue with move selection
     if (movePool.length) {
       // If there's only 1 move in the move pool, use it.
       if (movePool.length === 1) {
         return { move: movePool[0]!.moveId, targets: this.getNextTargets(movePool[0]!.moveId) }; // TODO: are the bangs correct?
-      }
-      // If a move is forced because of Encore, use it.
-      const encoreTag = this.getTag(EncoreTag) as EncoreTag;
-      if (encoreTag) {
-        const encoreMove = movePool.find(m => m?.moveId === encoreTag.moveId);
-        if (encoreMove) {
-          return { move: encoreMove.moveId, targets: this.getNextTargets(encoreMove.moveId) };
-        }
       }
       switch (this.aiType) {
         case AiType.RANDOM: // No enemy should spawn with this AI type in-game

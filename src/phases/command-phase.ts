@@ -103,10 +103,12 @@ export class CommandPhase extends FieldPhase {
 
     switch (command) {
       case Command.FIGHT:
-        let useStruggle = false;
-        if (cursor === -1 ||
-            playerPokemon.trySelectMove(cursor, args[0] as boolean) ||
-            (useStruggle = cursor > -1 && !playerPokemon.getMoveset().filter(m => m?.isUsable(playerPokemon)).length)) {
+        if (cursor === -1 || playerPokemon.trySelectMove(cursor, args[0] as boolean)) {
+          const encoredMoveId = playerPokemon.getTag(EncoreTag)?.moveId;
+          const encoredMove = playerPokemon.getMoveset().find(m => m?.moveId === encoredMoveId);
+          const useStruggle = (cursor > -1 && !playerPokemon.getMoveset().filter(m => m?.isUsable(playerPokemon)).length)
+            || (encoredMove && !encoredMove?.isUsable(playerPokemon, true));
+
           const moveId = !useStruggle ? cursor > -1 ? playerPokemon.getMoveset()[cursor]!.moveId : Moves.NONE : Moves.STRUGGLE; // TODO: is the bang correct?
           const turnCommand: TurnCommand = { command: Command.FIGHT, cursor: cursor, move: { move: moveId, targets: [], ignorePP: args[0] }, args: args };
           const moveTargets: MoveTargetSet = args.length < 3 ? getMoveTargets(playerPokemon, moveId) : args[2];
@@ -294,7 +296,7 @@ export class CommandPhase extends FieldPhase {
   checkFightOverride(): boolean {
     const pokemon = this.getPokemon();
 
-    const encoreTag = pokemon.getTag(EncoreTag) as EncoreTag;
+    const encoreTag = pokemon.getTag(EncoreTag);
 
     if (!encoreTag) {
       return false;
@@ -302,7 +304,7 @@ export class CommandPhase extends FieldPhase {
 
     const moveIndex = pokemon.getMoveset().findIndex(m => m?.moveId === encoreTag.moveId);
 
-    if (moveIndex === -1 || !pokemon.getMoveset()[moveIndex]!.isUsable(pokemon)) { // TODO: is this bang correct?
+    if (moveIndex === -1 || !pokemon.getMoveset()[moveIndex]!.isUsable(pokemon, false, true)) { // TODO: is this bang correct?
       return false;
     }
 
